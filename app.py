@@ -92,7 +92,7 @@ async def setup_menu():
                         {
                             "type": "web_url",
                             "title": "موقع وزارة الصحة",
-                            "url": "http://www.sante.gov.dz",
+                            "url": "http://covid19.sante.gov.dz/",
                             "webview_height_ratio": "full",
                         },
                     ],
