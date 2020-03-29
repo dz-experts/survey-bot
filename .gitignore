@@ -105,3 +105,6 @@ dmypy.json
 
 
 .env
+
+# VS CODE
+.vscode

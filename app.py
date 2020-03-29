@@ -11,14 +11,6 @@ from process import is_getting_started
 app = FastAPI()
 config = get_config()
 
-# # Redis dependency
-# async def get_redis():
-#     try:
-#         redis_client = await create_redis_pool(f"redis://{config.redis_host}")
-#         yield redis_client
-#     finally:
-#         await redis_client.wait_closed()
-
 
 @app.post("/")
 async def webhook(request: Request):
@@ -30,7 +22,6 @@ async def webhook(request: Request):
         return Response(status_code=400)
 
     the_bla_bla = data.get("entry")[0]["messaging"][0]
-    print("loop")
     sender = the_bla_bla.get("sender")
     redis_as_memory = await create_redis_pool(f"redis://{config.redis_host}")
     bot = Bot(redis_as_memory, sender.get("id"))
@@ -54,42 +45,32 @@ async def verify(request: Request):
     return Response(content="Nothing to see here!")
 
 
-if __name__ == "__main__":
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
-
-
 @app.get("/init")
 async def init():
     params = {"access_token": config.facebook_page_access_token}
-    headers = {"Content-Type": "application/json"}
-    data = json.dumps(
-        {
-            "greeting": [
-                {
-                    "locale": "ar_AR",
-                    "text": "التشخيص الذاتي لفيروس كورونا المستجد (حسب الأعراض فقط)",
-                },
-                {
-                    "locale": "fr_FR",
-                    "text": "Testez vous contre Covid-19 (Symptômes uniquement)",
-                },
-                {
-                    "locale": "default",
-                    "text": "Self check againt Covid-19 (Symptoms only)",
-                },
-            ],
-            "get_started": {"payload": "start"},
-        }
-    )
-    r = requests.post(
-        config.facebook_graph_url_profile, params=params, headers=headers, data=data,
-    )
-    print(r.status_code)
-    print(r.text)
+    data = {
+        "greeting": [
+            {
+                "locale": "ar_AR",
+                "text": "التشخيص الذاتي لفيروس كورونا المستجد (حسب الأعراض فقط)",
+            },
+            {
+                "locale": "fr_FR",
+                "text": "Testez vous contre Covid-19 (Symptômes uniquement)",
+            },
+            {
+                "locale": "default",
+                "text": "Self check againt Covid-19 (Symptoms only)",
+            },
+        ],
+        "get_started": {"payload": "start"},
+    }
+
+    _ = requests.post(config.facebook_graph_url_profile, params=params, json=data,)
 
 
 @app.get("/menu")
-async def menuu():
+async def setup_menu():
     params = {"access_token": config.facebook_page_access_token}
     headers = {"Content-Type": "application/json"}
     data = json.dumps(

@@ -7,14 +7,6 @@ from .config import get_config
 from .memory import BotMemory
 
 
-def update_memory(func):
-    def func_wrapper(self_):
-        func()
-        self_.memory.set(self_.chatting_to, self_.answers_payload)
-
-    return func_wrapper
-
-
 class Bot:
 
     auto_forgets_after_minutes: int = 30
