@@ -1,0 +1,27 @@
+version: "3.7"
+
+services:
+  app:
+    restart: always
+    build: .
+    env_file: # Pass the environment variables in the .env file to the container
+      - .env
+    ports:
+      - 5000:5000
+    volumes:
+      - ./:/app
+    links:
+      - redis
+
+  
+  redis:
+    restart: always
+    image: redis:alpine
+    volumes:
+      - 'redis:/var/lib/postgresql/data'
+    ports:
+      - 6379:6379
+
+
+volumes:
+  redis:
