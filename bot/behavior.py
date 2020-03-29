@@ -135,6 +135,7 @@ class Bot:
         return self._questions
 
     def send_answers_to_server(self, answers: dict) -> dict:
+        answers["facebook_sender_id"] = self.chatting_to
         res = requests.post(self.config.questions_url, json=answers)
         return res.json()["severity"]
 
