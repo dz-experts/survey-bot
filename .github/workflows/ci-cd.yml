@@ -13,7 +13,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag survery-bot:$(date +%s)
+      run: docker build . --file Dockerfile --tag survey-bot:$(date +%s)
 
   deploy:
     if: github.ref == 'refs/heads/master'
@@ -30,8 +30,10 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.DEPLOY_SSH_KEY }}
         port: ${{ secrets.PORT }}
+        envs: FACEBOOK_PAGE_ACCESS_TOKEN,FACEBOOK_VERIFY_TOKEN
         script: |
-          git clone https://github.com/dz-experts/survery-bot.git || true
-          cd survery-bot && echo "$FACEBOOK_PAGE_ACCESS_TOKEN" > .env
-          cd survery-bot && echo "$FACEBOOK_VERIFY_TOKEN" >> .env
-          cd survery-bot && git pull origin master && docker-compose up -d --build
+          git clone https://github.com/dz-experts/survey-bot.git || true
+          cd survey-bot 
+          echo "$FACEBOOK_PAGE_ACCESS_TOKEN" > .env
+          echo "$FACEBOOK_VERIFY_TOKEN" >> .env
+          git pull origin master && docker-compose up -d --build
