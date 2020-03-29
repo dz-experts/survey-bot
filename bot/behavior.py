@@ -71,20 +71,25 @@ class Bot:
 
         lang = self.answers_payload["lang"]
         question = server_questions[at_question]
-        question_key = question["key"]
-        self.answers_payload["answers"][question_key] = reply
+        question_id = question["id"]
+        self.answers_payload["answers"][question_id] = reply
 
         # next question
         at_question += 1
 
         if at_question >= len(server_questions):  # finished
             severity = self.send_answers_to_server(self.answers_payload["answers"])
-            self._send_text_question(f"You are at severity {severity}")
-            self.answers_payload = {}
-            await self.forget()
             return
 
         next_question = server_questions[at_question]
+        while self.can_skip_next_question(next_question):
+            at_question += 1
+            try:
+                next_question = server_questions[at_question]
+            except KeyError:
+                severity = self.send_answers_to_server(self.answers_payload["answers"])
+                return
+
         next_question_type = next_question["format"]["type"]
         next_question_text = next_question[f"text_{lang}"]
 
@@ -105,6 +110,9 @@ class Bot:
 
         self.answers_payload["at_question"] = at_question
         await self._update_memory()
+
+    def is_valid_reply(self, question, reply) -> bool:
+        pass
 
     def get_reply_from_bla_bla(self, the_bla_bla) -> str:
         # `quick_reply`: the user responded to one of the quick reply questions
@@ -130,10 +138,33 @@ class Bot:
             self._questions = questions
         return self._questions
 
+    def can_skip_next_question(self, next_question):
+        depends_on_question = next_question.get("depends_on_question")
+        if not depends_on_question:
+            return False
+
+        dependant_value = self.answers_payload["answers"][depends_on_question]
+        return dependant_value == next_question.get("depends_on_question_value")
+
+    def get_server_question_by_id(self, id: int) -> str:
+        for question in self.server_questions:
+            if question.get("id") == id:
+                return question
+
     def send_answers_to_server(self, answers: dict) -> dict:
-        answers["facebook_sender_id"] = self.chatting_to
-        res = requests.post(self.config.questions_url, json=answers)
-        return res.json()["severity"]
+
+        payload = {"facebook_sender_id": self.chatting_to}
+        for question_id, answer_value in answers.items():
+            key = self.get_server_question_by_id(question_id)
+            payload[key] = answer_value
+
+        res = requests.post(self.config.questions_url, json=payload)
+
+        severity = res.json()["severity"]
+        self._send_text_question(f"You are at severity {severity}")
+        self.answers_payload = {}
+        await self.forget()
+        return severity
 
     async def _get_memorized_answers(self) -> Union[dict, str]:
         return await self.memory.get(self.chatting_to)
