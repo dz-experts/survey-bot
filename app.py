@@ -6,7 +6,6 @@ from aioredis import ConnectionsPool, create_redis_pool
 from fastapi import Depends, FastAPI, Request, Response
 
 from bot import Bot, get_config
-from process import is_getting_started
 
 app = FastAPI()
 config = get_config()
