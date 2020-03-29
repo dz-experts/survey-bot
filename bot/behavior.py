@@ -52,6 +52,7 @@ class Bot:
         if not answers:
             await self._start_anew()
             return
+
         self.answers_payload = answers
         server_questions = await self.server_questions
         at_question = self.answers_payload.get("at_question")
@@ -61,54 +62,49 @@ class Bot:
                 await self._start_anew()
                 return
 
-            at_question += 1
             self.answers_payload["lang"] = reply
-            self.answers_payload["at_question"] = at_question
             self.answers_payload["answers"] = {}
-            next_question = server_questions[at_question][f"text_{reply}"]
-            self._send_text_question(next_question)
-            await self._update_memory()
+
+        if not self.answers_payload.get("lang"):
+            await self._start_anew()
+            return
+
+        lang = self.answers_payload["lang"]
+        question = server_questions[at_question]
+        question_key = question["key"]
+        self.answers_payload["answers"][question_key] = reply
+
+        # next question
+        at_question += 1
+
+        if at_question >= len(server_questions):  # finished
+            severity = self.send_answers_to_server(self.answers_payload["answers"])
+            self._send_text_question(f"You are at severity {severity}")
+            self.answers_payload = {}
+            await self.forget()
+            return
+
+        next_question = server_questions[at_question]
+        next_question_type = next_question["format"]["type"]
+        next_question_text = next_question[f"text_{lang}"]
+
+        if next_question_type in ["radio"]:
+            self._send_button_question(
+                next_question_text,
+                [
+                    (choice[f"label_{lang}"], choice["value"])
+                    for choice in next_question["format"]["choices"]
+                ],
+            )
         else:
-            if not self.answers_payload.get("lang"):
-                await self._start_anew()
-                return
-
-            lang = self.answers_payload["lang"]
-            question = server_questions[at_question]
-            question_key = question["key"]
-            self.answers_payload["answers"][question_key] = reply
-
-            # next question
-            at_question += 1
-
-            if at_question == len(server_questions):  # finished
-                severity = self.send_answers_to_server(self.answers_payload["answers"])
-                self._send_text_question(f"You are at severity {severity}")
-                self.answers_payload = {}
-                await self.forget()
-                return
-
-            next_question = server_questions[at_question]
-            next_question_type = next_question["format"]["type"]
-            next_question_text = next_question[f"text_{lang}"]
-
-            if next_question_type in ["radio"]:
-                self._send_button_question(
-                    next_question_text,
-                    [
-                        (choice[f"label_{lang}"], choice["value"])
-                        for choice in next_question["format"]["choices"]
-                    ],
+            if next_question_type in ["number", "select"]:
+                next_question_text = (
+                    f"{next_question_text} {self.numeric_questions_suffix[lang]}"
                 )
-            else:
-                if next_question_type in ["number", "select"]:
-                    next_question_text = (
-                        f"{next_question_text} {self.numeric_questions_suffix[lang]}"
-                    )
-                self._send_text_question(next_question_text)
+            self._send_text_question(next_question_text)
 
-            self.answers_payload["at_question"] = at_question
-            await self._update_memory()
+        self.answers_payload["at_question"] = at_question
+        await self._update_memory()
 
     def get_reply_from_bla_bla(self, the_bla_bla) -> str:
         # `quick_reply`: the user responded to one of the quick reply questions
