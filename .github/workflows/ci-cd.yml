@@ -1,0 +1,39 @@
+name: Build and deploy Docker Image CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag survery-bot:$(date +%s)
+
+  deploy:
+    if: github.ref == 'refs/heads/master'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: deploy
+      uses: appleboy/ssh-action@master
+      env:
+        FACEBOOK_PAGE_ACCESS_TOKEN: ${{ secrets.FACEBOOK_PAGE_ACCESS_TOKEN }}
+        FACEBOOK_VERIFY_TOKEN: ${{ secrets.FACEBOOK_VERIFY_TOKEN }}
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.DEPLOY_SSH_KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          git clone https://github.com/dz-experts/survery-bot.git || true
+          cd survery-bot && echo "$FACEBOOK_PAGE_ACCESS_TOKEN" > .env
+          cd survery-bot && echo "$FACEBOOK_VERIFY_TOKEN" >> .env
+          cd survery-bot && git pull origin master && docker-compose up -d --build
