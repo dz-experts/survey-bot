@@ -140,7 +140,7 @@ class Bot:
 
     def can_skip_next_question(self, next_question):
         depends_on_question = next_question.get("depends_on_question")
-        if not depends_on_question:
+        if depends_on_question is None:
             return False
 
         dependant_value = self.answers_payload["answers"].get(
@@ -149,7 +149,8 @@ class Bot:
         return dependant_value == next_question.get("depends_on_question_value")
 
     def get_server_question_by_id(self, id: int) -> str:
-        for question in self.server_questions:
+        server_questions = await self.server_questions
+        for question in server_questions:
             if question.get("id") == id:
                 return question
 
