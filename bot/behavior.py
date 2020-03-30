@@ -78,7 +78,7 @@ class Bot:
         at_question += 1
 
         if at_question >= len(server_questions):  # finished
-            severity = self.send_answers_to_server(self.answers_payload["answers"])
+            await self.send_answers_to_server(self.answers_payload["answers"])
             return
 
         next_question = server_questions[at_question]
@@ -87,7 +87,7 @@ class Bot:
             try:
                 next_question = server_questions[at_question]
             except KeyError:
-                severity = self.send_answers_to_server(self.answers_payload["answers"])
+                await self.send_answers_to_server(self.answers_payload["answers"])
                 return
 
         next_question_type = next_question["format"]["type"]
@@ -151,7 +151,7 @@ class Bot:
             if question.get("id") == id:
                 return question
 
-    def send_answers_to_server(self, answers: dict) -> dict:
+    async def send_answers_to_server(self, answers: dict):
 
         payload = {"facebook_sender_id": self.chatting_to}
         for question_id, answer_value in answers.items():
@@ -161,10 +161,29 @@ class Bot:
         res = requests.post(self.config.questions_url, json=payload)
 
         severity = res.json()["severity"]
-        self._send_text_question(f"You are at severity {severity}")
+        lang = self.answers_payload["lang"]
+        possible_responses = {
+            0: {
+                "ar": "لا يبدو أن حالتك تثير القلق.",
+                "fr": "Votre état ne semble pas préoccupant.",
+            },
+            1: {
+                "ar": "تشير أعراضك إلى الحاجة إلى استشارة طبية.",
+                "fr": "Vos symptômes indiquent qu'un avis médical est nécessaire.",
+            },
+            2: {
+                "ar": "تشير أعراضك إلى الحاجة إلى استشارة طبية.",
+                "fr": "Vos symptômes indiquent qu'un avis médical est nécessaire.",
+            },
+            3: {
+                "ar": "تتطلب أعراضك تدخلا سريعا.",
+                "fr": "Vos symptômes nécessitent une prise en charge rapide.",
+            },
+        }
+        response_text = possible_responses[severity][lang]
+        self._send_text_question(response_text)
         self.answers_payload = {}
         await self.forget()
-        return severity
 
     async def _get_memorized_answers(self) -> Union[dict, str]:
         return await self.memory.get(self.chatting_to)
