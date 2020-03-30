@@ -71,7 +71,7 @@ class Bot:
 
         lang = self.answers_payload["lang"]
         question = server_questions[at_question]
-        question_id = question["id"]
+        question_id = int(question["id"])
         self.answers_payload["answers"][question_id] = reply
 
         # next question
@@ -144,14 +144,14 @@ class Bot:
             return False
 
         dependant_value = self.answers_payload["answers"].get(
-            depends_on_question, "non-existing!"
+            int(depends_on_question), "non-existing!"
         )
         return dependant_value == next_question.get("depends_on_question_value")
 
     def get_server_question_by_id(self, id: int) -> str:
         server_questions = await self.server_questions
         for question in server_questions:
-            if question.get("id") == id:
+            if int(question.get("id")) == int(id):
                 return question
 
     async def send_answers_to_server(self, answers: dict):
