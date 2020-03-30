@@ -143,7 +143,9 @@ class Bot:
         if not depends_on_question:
             return False
 
-        dependant_value = self.answers_payload["answers"][depends_on_question]
+        dependant_value = self.answers_payload["answers"].get(
+            depends_on_question, "non-existing!"
+        )
         return dependant_value == next_question.get("depends_on_question_value")
 
     def get_server_question_by_id(self, id: int) -> str:
