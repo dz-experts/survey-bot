@@ -87,11 +87,12 @@ class Bot:
         next_question = server_questions[at_question]
         while self.can_skip_next_question(next_question):
             at_question += 1
-            try:
-                next_question = server_questions[at_question]
-            except KeyError:
+
+            if at_question >= len(self.server_questions):
                 await self.send_answers_to_server(self.answers_payload["answers"])
                 return
+
+            next_question = server_questions[at_question]
 
         next_question_type = next_question["format"]["type"]
         next_question_text = next_question[f"text_{lang}"]
