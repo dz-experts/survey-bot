@@ -64,6 +64,7 @@ class Bot:
 
             self.answers_payload["lang"] = reply
             self.answers_payload["answers"] = {}
+            at_question += 1
             self.answers_payload["at_question"] = at_question
             await self._update_memory()
             return
