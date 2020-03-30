@@ -64,6 +64,9 @@ class Bot:
 
             self.answers_payload["lang"] = reply
             self.answers_payload["answers"] = {}
+            self.answers_payload["at_question"] = at_question
+            await self._update_memory()
+            return
 
         if not self.answers_payload.get("lang"):
             await self._start_anew()
@@ -158,7 +161,8 @@ class Bot:
 
         payload = {"facebook_sender_id": self.chatting_to}
         for question_id, answer_value in answers.items():
-            key = await self.get_server_question_by_id(question_id)
+            q = await self.get_server_question_by_id(question_id)
+            key = q.get("key")
             payload[key] = answer_value
 
         res = requests.post(self.config.questions_url, json=payload)
