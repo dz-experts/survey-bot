@@ -148,7 +148,7 @@ class Bot:
         )
         return dependant_value == next_question.get("depends_on_question_value")
 
-    def get_server_question_by_id(self, id: int) -> str:
+    async def get_server_question_by_id(self, id: int) -> str:
         server_questions = await self.server_questions
         for question in server_questions:
             if int(question.get("id")) == int(id):
@@ -158,7 +158,7 @@ class Bot:
 
         payload = {"facebook_sender_id": self.chatting_to}
         for question_id, answer_value in answers.items():
-            key = self.get_server_question_by_id(question_id)
+            key = await self.get_server_question_by_id(question_id)
             payload[key] = answer_value
 
         res = requests.post(self.config.questions_url, json=payload)
